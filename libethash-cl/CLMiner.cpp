@@ -275,7 +275,7 @@ CLMiner::~CLMiner()
 void CLMiner::workLoop()
 {
 	// Memory for zero-ing buffers. Cannot be static because crashes on macOS.
-	uint32_t const c_zero = 0;
+	uint32_t const c_zero[9] = {0};
 
 	uint64_t startNonce = 0;
 
@@ -293,8 +293,8 @@ void CLMiner::workLoop()
 				// New work received. Update GPU data.
 				if (!w)
 				{
-					cllog << "No work. Pause for 3 s.";
-					std::this_thread::sleep_for(std::chrono::seconds(3));
+//					cllog << "No work. Pause for 3 s.";
+//					std::this_thread::sleep_for(std::chrono::seconds(3));
 					continue;
 				}
 
@@ -340,14 +340,15 @@ void CLMiner::workLoop()
 
 			// Read results.
 			// TODO: could use pinned host pointer instead.
-			uint32_t results[c_maxSearchResults + 1];
+			uint32_t results[c_maxSearchResults + 9];  // nonce + 8 mix
 			m_queue.enqueueReadBuffer(m_searchBuffer, CL_TRUE, 0, sizeof(results), &results);
 
 			uint64_t nonce = 0;
+			h256 mix;
 			if (results[0] > 0)
 			{
-				// Ignore results except the first one.
 				nonce = current.startNonce + results[1];
+				memcpy(mix.data(), (void *)&results[2], 32);
 				// Reset search buffer if any solution found.
 				m_queue.enqueueWriteBuffer(m_searchBuffer, CL_FALSE, 0, sizeof(c_zero), &c_zero);
 			}
@@ -359,13 +360,15 @@ void CLMiner::workLoop()
 			// Report results while the kernel is running.
 			// It takes some time because ethash must be re-evaluated on CPU.
 			if (nonce != 0) {
-				Result r = EthashAux::eval(current.epoch, current.header, nonce);
-				if (r.value < current.boundary)
-					farm.submitProof(Solution{nonce, r.mixHash, current, current.header != w.header});
-				else {
-					farm.failedSolution();
-					cwarn << "FAILURE: GPU gave incorrect result!";
-				}
+				// Until CPU validation is implemented, we trust the kernel to have correct solution
+				farm.submitProof(Solution{nonce, mix, current, current.header != w.header});
+//				Result r = EthashAux::eval(current.epoch, current.header, nonce);
+//				if (r.value < current.boundary)
+//					farm.submitProof(Solution{nonce, r.mixHash, current, current.header != w.header});
+//				else {
+//					farm.failedSolution();
+//					cwarn << "FAILURE: GPU gave incorrect result!";
+//				}
 			}
 
 			current = w;        // kernel now processing newest work
@@ -647,7 +650,7 @@ bool CLMiner::init(int epoch)
 			cllog << "Creating DAG buffer, size" << dagBytes;
 			m_dag = cl::Buffer(m_context, CL_MEM_READ_ONLY, dagBytes);
 			cllog << "Loading kernels";
-			m_searchKernel = cl::Kernel(program, "ethash_search");
+			m_searchKernel = cl::Kernel(program, "progpow_search");
 			m_dagKernel = cl::Kernel(program, "ethash_calculate_dag_item");
 			cllog << "Writing light cache buffer";
 			m_queue.enqueueWriteBuffer(m_light, CL_TRUE, 0, light->data().size(), light->data().data());
@@ -667,7 +670,7 @@ bool CLMiner::init(int epoch)
 
 		// create mining buffers
 		ETHCL_LOG("Creating mining buffer");
-		m_searchBuffer = cl::Buffer(m_context, CL_MEM_WRITE_ONLY, (c_maxSearchResults + 1) * sizeof(uint32_t));
+		m_searchBuffer = cl::Buffer(m_context, CL_MEM_WRITE_ONLY, (c_maxSearchResults + 9) * sizeof(uint32_t));
 
 		uint32_t const work = (uint32_t)(dagBytes / sizeof(node));
 		uint32_t fullRuns = work / m_globalWorkSize;

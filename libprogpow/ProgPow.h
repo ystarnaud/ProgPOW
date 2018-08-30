@@ -25,12 +25,12 @@ private:
     static std::string math(std::string d, std::string a, std::string b, uint32_t r);
     static std::string merge(std::string a, std::string b, uint32_t r);
 
-    static uint32_t fnv1a(uint32_t &h, uint32_t d);
+    static uint32_t fnv1a(uint32_t *h, uint32_t d);
     // KISS99 is simple, fast, and passes the TestU01 suite
     // https://en.wikipedia.org/wiki/KISS_(algorithm)
     // http://www.cse.yorku.ca/~oz/marsaglia-rng.html
     typedef struct {
         uint32_t z, w, jsr, jcong;
     } kiss99_t;
-    static uint32_t kiss99(kiss99_t &st);
+    static uint32_t kiss99(kiss99_t *st);
 };

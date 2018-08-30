@@ -2,9 +2,11 @@
 
 #include <sstream>
 
-#define rnd() (kiss99(rnd_state))
+#define rnd() (kiss99(&rnd_state))
 #define mix_src() ("mix[" + std::to_string(rnd() % PROGPOW_REGS) + "]")
 #define mix_dst() ("mix[" + std::to_string(mix_seq[(mix_seq_cnt++)%PROGPOW_REGS]) + "]")
+
+#define FNV_PRIME ((uint32_t)0x1000193)
 
 void swap(int &a, int &b)
 {
@@ -17,14 +19,14 @@ std::string ProgPow::getKern(uint64_t prog_seed, kernel_t kern)
 {
 	std::stringstream ret;
 
-    uint32_t seed0 = (uint32_t)prog_seed;
-    uint32_t seed1 = prog_seed >> 32;
+    auto seed0 = (uint32_t)prog_seed;
+	auto seed1 = (uint32_t)(prog_seed >> 32);
     uint32_t fnv_hash = 0x811c9dc5;
     kiss99_t rnd_state;
-    rnd_state.z = fnv1a(fnv_hash, seed0);
-    rnd_state.w = fnv1a(fnv_hash, seed1);
-    rnd_state.jsr = fnv1a(fnv_hash, seed0);
-    rnd_state.jcong = fnv1a(fnv_hash, seed1);
+    rnd_state.z = fnv1a(&fnv_hash, seed0);
+    rnd_state.w = fnv1a(&fnv_hash, seed1);
+    rnd_state.jsr = fnv1a(&fnv_hash, seed0);
+    rnd_state.jcong = fnv1a(&fnv_hash, seed1);
 
     // Create a random sequence of mix destinations
     // Merge is a read-modify-write, guaranteeing every mix element is modified every loop
@@ -191,20 +193,21 @@ std::string ProgPow::math(std::string d, std::string a, std::string b, uint32_t 
     return "#error\n";
 }
 
-uint32_t ProgPow::fnv1a(uint32_t &h, uint32_t d)
+uint32_t ProgPow::fnv1a(uint32_t *h, uint32_t d)
 {
-	return h = (h ^ d) * 0x1000193;
+	*h = (*h ^ d) * FNV_PRIME;
+	return *h;
 }
 
 // KISS99 is simple, fast, and passes the TestU01 suite
 // https://en.wikipedia.org/wiki/KISS_(algorithm)
 // http://www.cse.yorku.ca/~oz/marsaglia-rng.html
-uint32_t ProgPow::kiss99(kiss99_t &st)
+uint32_t ProgPow::kiss99(kiss99_t *st)
 {
-	uint32_t znew = (st.z = 36969 * (st.z & 65535) + (st.z >> 16));
-	uint32_t wnew = (st.w = 18000 * (st.w & 65535) + (st.w >> 16));
+	uint32_t znew = (st->z = 36969 * (st->z & 65535) + (st->z >> 16));
+	uint32_t wnew = (st->w = 18000 * (st->w & 65535) + (st->w >> 16));
 	uint32_t MWC = ((znew << 16) + wnew);
-	uint32_t SHR3 = (st.jsr ^= (st.jsr << 17), st.jsr ^= (st.jsr >> 13), st.jsr ^= (st.jsr << 5));
-	uint32_t CONG = (st.jcong = 69069 * st.jcong + 1234567);
+	uint32_t SHR3 = (st->jsr ^= (st->jsr << 17), st->jsr ^= (st->jsr >> 13), st->jsr ^= (st->jsr << 5));
+	uint32_t CONG = (st->jcong = 69069 * st->jcong + 1234567);
 	return ((MWC^CONG) + SHR3);
 }

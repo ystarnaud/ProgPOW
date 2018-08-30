@@ -105,20 +105,22 @@ void CUDAMiner::workLoop()
 	{
 		while(!shouldStop())
 		{
-	                // take local copy of work since it may end up being overwritten.
+	        // take local copy of work since it may end up being overwritten.
 			const WorkPackage w = work();
 			
 			if (current.header != w.header || current.epoch != w.epoch)
 			{
 				if(!w || w.header == h256())
 				{
-					cnote << "No work.";
+//					cnote << "No work.";
 					//std::this_thread::sleep_for(std::chrono::seconds(3));
 					continue;
 				}
-				if (current.epoch != w.epoch)
-					if(!init(w.epoch))
+				if (current.epoch != w.epoch) {
+					cudalog << "New epoch: " << w.epoch;
+					if (!init(w.epoch))
 						break;
+				}
 				current = w;
 			}
 			uint64_t upper64OfBoundary = (uint64_t)(u64)((u256)current.boundary >> 192);

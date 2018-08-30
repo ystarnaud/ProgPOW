@@ -81,7 +81,7 @@ __device__ __forceinline__ void keccak_f1600(uint64_t st[25])
 	}
 }
 
-#define FNV_PRIME	0x01000193U
+#define FNV_PRIME ((uint32_t)0x1000193)
 #define fnv(x,y) ((uint32_t(x) * (FNV_PRIME)) ^uint32_t(y))
 __device__ uint4 fnv4(uint4 a, uint4 b)
 {
