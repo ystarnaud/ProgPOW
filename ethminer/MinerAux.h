@@ -111,7 +111,7 @@ public:
 		string arg = argv[i];
 		if ((arg == "-F" || arg == "--farm") && i + 1 < argc)
 		{
-			deprecated(arg);
+			//deprecated(arg);
 			m_mode = OperationMode::Farm;
 			string url = argv[++i];
 			URI uri;
@@ -141,7 +141,7 @@ public:
 		}
 		else if ((arg == "-FF" || arg == "-SF" || arg == "-FS" || arg == "--farm-failover" || arg == "--stratum-failover") && i + 1 < argc)
 		{
-			deprecated(arg);
+			//deprecated(arg);
 			string url = argv[++i];
 			if (url == "exit") // add fake port # to exit url
 				url = "exit:1";
@@ -197,7 +197,7 @@ public:
 			}
 		else if ((arg == "-S" || arg == "--stratum") && i + 1 < argc)
 		{
-			deprecated(arg);
+			//deprecated(arg);
 			m_mode = OperationMode::Stratum;
 
 			string url = string(argv[++i]);
@@ -224,7 +224,7 @@ public:
 		}
 		else if ((arg == "-O" || arg == "--userpass") && i + 1 < argc)
 		{
-			deprecated(arg);
+			//deprecated(arg);
 			string userpass = string(argv[++i]);
 			size_t p = userpass.find_first_of(":");
 			m_endpoints[k_primary_ep_ix].User(userpass.substr(0, p));
@@ -276,7 +276,7 @@ public:
 		}
 		else if ((arg == "-FO" || arg == "--failover-userpass") && i + 1 < argc)
 		{
-			deprecated(arg);
+			//deprecated(arg);
 			string userpass = string(argv[++i]);
 			size_t p = userpass.find_first_of(":");
 			m_endpoints[k_secondary_ep_ix].User(userpass.substr(0, p));
