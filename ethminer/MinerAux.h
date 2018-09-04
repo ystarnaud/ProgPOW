@@ -536,8 +536,8 @@ public:
 		}
 		else if (arg == "--cuda-streams" && i + 1 < argc)
 			m_numStreams = stol(argv[++i]);
-		else if (arg == "--cuda-noeval")
-			m_cudaNoEval = true;
+		else if (arg == "--cuda-eval")
+			m_cudaNoEval = false;
 #endif
 		else if ((arg == "-L" || arg == "--dag-load-mode") && i + 1 < argc)
 		{
@@ -1011,7 +1011,7 @@ private:
 	unsigned m_cudaSchedule = 4; // sync
 	unsigned m_cudaGridSize = CUDAMiner::c_defaultGridSize;
 	unsigned m_cudaBlockSize = CUDAMiner::c_defaultBlockSize;
-	bool m_cudaNoEval = false;
+	bool m_cudaNoEval = true;
 	unsigned m_parallelHash    = 4;
 #endif
 	unsigned m_dagLoadMode = 0; // parallel
